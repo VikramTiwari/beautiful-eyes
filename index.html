@@ -1,157 +1,152 @@
 <html>
-	<head>
-		<script
-		  src="https://code.jquery.com/jquery-3.2.1.min.js"
-		  integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
-		  crossorigin="anonymous"></script>
-	</head>
-	<body>
-		<script type="text/javascript">
-			vision_key = 'GCP_Vison_API_enabled_credential_key';
 
-			function encodeImageFileAsURL(element) {
-			  var file = element.files[0];
-			  var reader = new FileReader();
-			  reader.onloadend = function() {
-			    console.log('RESULT', reader.result);
-			    labelImage(reader.result);
-			  }
-			  reader.readAsDataURL(file);
-			}
+<head>
+  <script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+    crossorigin="anonymous"></script>
+</head>
 
-			function labelImage(base64Image){
-				payload = {
-				  "requests": [
-				    {
-				      "image": {
-				        "content": base64Image.substring(23)
-				      },
-				      "features": [
-				        {
-				          "type": "FACE_DETECTION"
-				        }
-				      ]
-				    }
-				  ]
-				};
+<body>
+  <script type="text/javascript">
+    vision_key = 'GCP_Vison_API_enabled_credential_key';
 
-				$.ajax({
-				    url: 'https://vision.googleapis.com/v1/images:annotate?key=' + vision_key,
-				    type: 'POST',
-				    data: JSON.stringify(payload),
-				    contentType: 'application/json; charset=utf-8',
-				    dataType: 'json',
-				    async: false,
-				    success: function(msg) {
-				    	console.log(msg);
-				        addToPage(base64Image, msg.responses[0].faceAnnotations);
-				    }
-				});
-			}
+    function encodeImageFileAsURL(element) {
+      var file = element.files[0];
+      var reader = new FileReader();
+      reader.onloadend = function () {
+        console.log('RESULT', reader.result);
+        labelImage(reader.result);
+      }
+      reader.readAsDataURL(file);
+    }
 
-			function addToPage(base64Image, annotations){
-				factor = 0.60;
-				left_eye_rotate = 0;
-				right_eye_rotate = 0;
+    function labelImage(base64Image) {
+      payload = {
+        "requests": [{
+          "image": {
+            "content": base64Image.substring(23)
+          },
+          "features": [{
+            "type": "FACE_DETECTION"
+          }]
+        }]
+      };
 
-				/* get the annotations for the following:
-					LEFT_EYE_RIGHT_CORNER
-					LEFT_EYE_LEFT_CORNER
-					LEFT_EYE_TOP_BOUNDARY
-				*/
+      $.ajax({
+        url: 'https://vision.googleapis.com/v1/images:annotate?key=' + vision_key,
+        type: 'POST',
+        data: JSON.stringify(payload),
+        contentType: 'application/json; charset=utf-8',
+        dataType: 'json',
+        async: false,
+        success: function (msg) {
+          console.log(msg);
+          addToPage(base64Image, msg.responses[0].faceAnnotations);
+        }
+      });
+    }
 
-				for(i=0; i < annotations[0].landmarks.length; i++){
-					if(annotations[0].landmarks[i].type == 'LEFT_EYE_RIGHT_CORNER'){
-						left_eye_right_corner = annotations[0].landmarks[i].position.x;
-						left_eye_right_corner_y = annotations[0].landmarks[i].position.y;
-					}
-					if(annotations[0].landmarks[i].type == 'LEFT_EYE_LEFT_CORNER'){
-						left_eye_left_corner = annotations[0].landmarks[i].position.x;
-						left_eye_left_corner_y = annotations[0].landmarks[i].position.y;
-					}
-					if(annotations[0].landmarks[i].type == 'LEFT_EYE_TOP_BOUNDARY'){
-						left_eye_top_boundary = annotations[0].landmarks[i].position.y;
-					}
-				}
+    function addToPage(base64Image, annotations) {
+      factor = 0.60;
+      left_eye_rotate = 0;
+      right_eye_rotate = 0;
 
-				// width is the distance between left side and right side
-				left_eye_width = left_eye_right_corner - left_eye_left_corner;
+      /* get the annotations for the following:
+      	LEFT_EYE_RIGHT_CORNER
+      	LEFT_EYE_LEFT_CORNER
+      	LEFT_EYE_TOP_BOUNDARY
+      */
 
-				// we increase the width a little bit so that the replacement eyes fit nicely.
-				// otherwise, it looks weirdly tiny.
-				increase_factor = left_eye_width * factor;
-				left_eye_width += increase_factor;
+      for (i = 0; i < annotations[0].landmarks.length; i++) {
+        if (annotations[0].landmarks[i].type == 'LEFT_EYE_RIGHT_CORNER') {
+          left_eye_right_corner = annotations[0].landmarks[i].position.x;
+          left_eye_right_corner_y = annotations[0].landmarks[i].position.y;
+        }
+        if (annotations[0].landmarks[i].type == 'LEFT_EYE_LEFT_CORNER') {
+          left_eye_left_corner = annotations[0].landmarks[i].position.x;
+          left_eye_left_corner_y = annotations[0].landmarks[i].position.y;
+        }
+        if (annotations[0].landmarks[i].type == 'LEFT_EYE_TOP_BOUNDARY') {
+          left_eye_top_boundary = annotations[0].landmarks[i].position.y;
+        }
+      }
 
-				// find out the top left corner coordinates
-				// adjust as well to account for the half of the amount the width was increased
-				left_eye_upper_left_corner_x = left_eye_left_corner - (increase_factor/2);
-				left_eye_upper_left_corner_y = left_eye_top_boundary - (increase_factor/2);
+      // width is the distance between left side and right side
+      left_eye_width = left_eye_right_corner - left_eye_left_corner;
+
+      // we increase the width a little bit so that the replacement eyes fit nicely.
+      // otherwise, it looks weirdly tiny.
+      increase_factor = left_eye_width * factor;
+      left_eye_width += increase_factor;
+
+      // find out the top left corner coordinates
+      // adjust as well to account for the half of the amount the width was increased
+      left_eye_upper_left_corner_x = left_eye_left_corner - (increase_factor / 2);
+      left_eye_upper_left_corner_y = left_eye_top_boundary - (increase_factor / 2);
 
 
-				// find the slope in degrees
-				deltaX = left_eye_right_corner - left_eye_left_corner;
-				deltaY = left_eye_right_corner_y - left_eye_left_corner_y;
-				rad = Math.atan2(deltaY, deltaX); // In radians
-				left_eye_rotate = rad * (180 / Math.PI)
+      // find the slope in degrees
+      deltaX = left_eye_right_corner - left_eye_left_corner;
+      deltaY = left_eye_right_corner_y - left_eye_left_corner_y;
+      rad = Math.atan2(deltaY, deltaX); // In radians
+      left_eye_rotate = rad * (180 / Math.PI)
 
 
-				// COPY PASTE EVERYTHING ABOVE AND CHANGE TO RIGHT EYE
+      // COPY PASTE EVERYTHING ABOVE AND CHANGE TO RIGHT EYE
 
-				/* get the annotations for the following:
-					RIGHT_EYE_RIGHT_CORNER
-					RIGHT_EYE_LEFT_CORNER
-					RIGHT_EYE_TOP_BOUNDARY
-				*/
+      /* get the annotations for the following:
+      	RIGHT_EYE_RIGHT_CORNER
+      	RIGHT_EYE_LEFT_CORNER
+      	RIGHT_EYE_TOP_BOUNDARY
+      */
 
-				for(i=0; i < annotations[0].landmarks.length; i++){
-					if(annotations[0].landmarks[i].type == 'RIGHT_EYE_RIGHT_CORNER'){
-						right_eye_right_corner = annotations[0].landmarks[i].position.x;
-						right_eye_right_corner_y = annotations[0].landmarks[i].position.y;
-					}
-					if(annotations[0].landmarks[i].type == 'RIGHT_EYE_LEFT_CORNER'){
-						right_eye_left_corner = annotations[0].landmarks[i].position.x;
-						right_eye_left_corner_y = annotations[0].landmarks[i].position.y;
-					}
-					if(annotations[0].landmarks[i].type == 'RIGHT_EYE_TOP_BOUNDARY'){
-						right_eye_top_boundary = annotations[0].landmarks[i].position.y;
-					}
-				}
+      for (i = 0; i < annotations[0].landmarks.length; i++) {
+        if (annotations[0].landmarks[i].type == 'RIGHT_EYE_RIGHT_CORNER') {
+          right_eye_right_corner = annotations[0].landmarks[i].position.x;
+          right_eye_right_corner_y = annotations[0].landmarks[i].position.y;
+        }
+        if (annotations[0].landmarks[i].type == 'RIGHT_EYE_LEFT_CORNER') {
+          right_eye_left_corner = annotations[0].landmarks[i].position.x;
+          right_eye_left_corner_y = annotations[0].landmarks[i].position.y;
+        }
+        if (annotations[0].landmarks[i].type == 'RIGHT_EYE_TOP_BOUNDARY') {
+          right_eye_top_boundary = annotations[0].landmarks[i].position.y;
+        }
+      }
 
-				// width is the distance between left side and right side
-				right_eye_width = right_eye_right_corner - right_eye_left_corner;
+      // width is the distance between left side and right side
+      right_eye_width = right_eye_right_corner - right_eye_left_corner;
 
-				// we increase the width a little bit so that the replacement eyes fit nicely.
-				// otherwise, it looks weirdly tiny.
-				increase_factor = right_eye_width * factor;
-				right_eye_width += increase_factor;
+      // we increase the width a little bit so that the replacement eyes fit nicely.
+      // otherwise, it looks weirdly tiny.
+      increase_factor = right_eye_width * factor;
+      right_eye_width += increase_factor;
 
-				// find out the top left corner coordinates
-				// adjust as well to account for the half of the amount the width was increased
-				right_eye_upper_left_corner_x = right_eye_left_corner - (increase_factor/2);
-				right_eye_upper_left_corner_y = right_eye_top_boundary - (increase_factor/2);
+      // find out the top left corner coordinates
+      // adjust as well to account for the half of the amount the width was increased
+      right_eye_upper_left_corner_x = right_eye_left_corner - (increase_factor / 2);
+      right_eye_upper_left_corner_y = right_eye_top_boundary - (increase_factor / 2);
 
-				// find the slope in degrees
-				deltaX = right_eye_right_corner - right_eye_left_corner;
-				deltaY = right_eye_right_corner_y - right_eye_left_corner_y;
-				rad = Math.atan2(deltaY, deltaX); // In radians
+      // find the slope in degrees
+      deltaX = right_eye_right_corner - right_eye_left_corner;
+      deltaY = right_eye_right_corner_y - right_eye_left_corner_y;
+      rad = Math.atan2(deltaY, deltaX); // In radians
 
-				right_eye_rotate = rad * (180 / Math.PI)
+      right_eye_rotate = rad * (180 / Math.PI)
 
-				// add to DOM
-				$("#results").prepend('<img src="left-eye.png" style="width: ' + left_eye_width + 'px; height: auto; top: ' + left_eye_upper_left_corner_y + 'px; left: ' + left_eye_upper_left_corner_x + 'px; position: fixed; z-index: 999; -webkit-transform: rotate(' + left_eye_rotate + 'deg);" /><img src="right-eye.png" style="width: ' + right_eye_width + 'px; height: auto; top: ' + right_eye_upper_left_corner_y + 'px; left: ' + right_eye_upper_left_corner_x + 'px; position: fixed; z-index: 999; -webkit-transform: rotate(' + right_eye_rotate + 'deg);" /><img src="' + base64Image + '" style="position:fixed; top:0; left: 0;" />');
-			}
-		</script>
-		<h1>Beautiful Eyes!</h1>
-		<input type="file" id="photo" onchange="encodeImageFileAsURL(this)" />
-		<div id="results" style="position: relative;"></div>
-	</body>
+      // add to DOM
+      $("#results").prepend('<img src="left-eye.png" style="width: ' + left_eye_width + 'px; height: auto; top: ' +
+        left_eye_upper_left_corner_y + 'px; left: ' + left_eye_upper_left_corner_x +
+        'px; position: fixed; z-index: 999; -webkit-transform: rotate(' + left_eye_rotate +
+        'deg);" /><img src="right-eye.png" style="width: ' + right_eye_width + 'px; height: auto; top: ' +
+        right_eye_upper_left_corner_y + 'px; left: ' + right_eye_upper_left_corner_x +
+        'px; position: fixed; z-index: 999; -webkit-transform: rotate(' + right_eye_rotate + 'deg);" /><img src="' +
+        base64Image + '" style="position:fixed; top:0; left: 0;" />');
+    }
+
+  </script>
+  <h1>Beautiful Eyes!</h1>
+  <input type="file" id="photo" onchange="encodeImageFileAsURL(this)" />
+  <div id="results" style="position: relative;"></div>
+</body>
+
 </html>
-
-
-
-
-
-
-
-
-
